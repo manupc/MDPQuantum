@@ -14,6 +14,45 @@ have the structure given in environments.py
 
 import numpy as np
 from collections import defaultdict
+import time
+
+
+
+
+###########################################################################
+# TEST POLICY
+###########################################################################
+
+# Tests an agent deterministic policy policy[s]=a over an environment
+#   env : The environment 
+#   policy: The agent policy (deterministic
+#   iterations: Number of experiences
+# Returns a tuple (R, t) containing:
+#   R : The total reward obtained in the trajectory
+#   t : The time spent in seconds
+def runEnvironment(env, policy, iterations, showIter=False):
+    
+    s= env.reset()
+    R= 0
+    t0= time.time()
+    for it in range(iterations):
+        
+        a= int( policy[s] )
+        sp, r= env.step(a)
+        
+        R+= r.squeeze()
+        s= sp
+        
+        if showIter:
+            print('Test at iteration {}/{} with R={}'.format(it+1, iterations, R))
+
+
+    tf= time.time()
+    t_total= tf-t0
+    return R, t_total
+
+
+
 
 ###########################################################################
 # VALUE ITERATION ALGORITHM
@@ -95,10 +134,8 @@ def ExtractPolicyFromVTable(env, Vtable, gamma):
                 p= env.transitionProb(s, a, sp)
                 if p>0.0:
                     Qtable[a]+= p*(env.rewardValue(s,a,sp) + gamma*Vtable[sp] )
-
         # Update policy
         policy[s]= np.argmax(Qtable)
-        
     return policy
 
     
@@ -182,9 +219,11 @@ def QLearning(env, MaxSteps, eps0, epsf, epsSteps, alpha, gamma, show=False):
         
         # Execute action in environment
         sp, r= env.step(a)
+        r= r.squeeze()
         
         # Get best known action ap
-        ap= np.argmax( [Q[(sp, a_)] for a_ in range(env.numberOfActions())] ) 
+        QValues= [Q[(sp, a_)] for a_ in range(env.numberOfActions())]
+        ap= np.argmax( QValues ) 
         
         # Q-Learning update rule
         Q[(s,a)]+= alpha*(r+gamma*Q[(sp, ap)] - Q[(s,a)])
